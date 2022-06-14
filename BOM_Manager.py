@@ -57,10 +57,17 @@ class Assembly(BOM_Line):
         return output.set_index("PartNumber")
     
     def AllAssemblies(self):
-        assys = self.getAllAssemblies()
-        assys["PartNumber"] = assys["Object"].apply(lambda x: x.partNum)
-        # return assys.drop_duplicates(keep = "first", subset = "PartNumber")
-        return assys
+        output = self.getAllAssemblies()
+        
+        unique = output.PartNumber.unique()
+        temp = []
+        for i in unique:
+            item = output[output.PartNumber == i]
+            total = item["Qty"].sum()
+            temp.append({"Total":total, "PartNumber": item.Object.iloc[0].partNum, "Description": item.Description.values[0], "Parents": list(set(item.Parent.values))})
+        
+        final = pd.DataFrame.from_records(temp).set_index("PartNumber")
+        return final
         
     def getAllParts(self):
         assys = self.BOM[self.BOM.PartType == "Assembly"]
@@ -76,7 +83,6 @@ class Assembly(BOM_Line):
     
     def getAllAssemblies(self):
         assys = self.BOM[self.BOM.PartType == "Assembly"].copy()
-        # parts = self.BOM[self.BOM.PartType == "Part"].copy()
         assys["Parent"] = self.partNum
         if not assys.empty:
             for i in assys.iterrows():
@@ -93,7 +99,6 @@ class Subassembly(Assembly):
         
     def __init__(self, partNum, qty, desc, parts, parent):
         super().__init__(partNum, qty, desc, parts)
-        # print(self.partNum)
         self.FindSubassembly()
         self.parentAssembly = parent
 
@@ -118,11 +123,6 @@ xcel = pd.read_excel(os.getcwd() + "/{}.xlsx".format(assy))
 assembly = Assembly(assy, 1, "Top Level", xcel)
 
 assys = assembly.AllAssemblies()
-
-for i in assys.Object:
-    if i.BOM.empty:
-        print(i.partNum)
-
+assys.to_excel("output/{}_Assemblies.xlsx".format(assys))
 parts = assembly.flattenBOM()
-# parts.fillna("Nothing", inplace = True)
-# print(parts[parts.Description == "Nothing"])
+parts.to_excel("output/{}_Parts.xlsx".format(assy))
