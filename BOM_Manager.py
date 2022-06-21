@@ -123,6 +123,6 @@ xcel = pd.read_excel(os.getcwd() + "/{}.xlsx".format(assy))
 assembly = Assembly(assy, 1, "Top Level", xcel)
 
 assys = assembly.AllAssemblies()
-assys.to_excel("output/{}_Assemblies.xlsx".format(assys))
+assys.to_excel("output/{}_Assys.xlsx".format(assy))
 parts = assembly.flattenBOM()
 parts.to_excel("output/{}_Parts.xlsx".format(assy))
